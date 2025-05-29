@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useWizardStore } from '@/store/wizardStore'
+import { useTransitionMetrics } from '@/hooks/metrics'
 import StepPage from '@/components/wizard/StepPage'
 import Confetti from '@/components/wizard/Confetti'
 
@@ -11,6 +13,25 @@ interface FormData {
 
 export default function CompletePage() {
   const { formData } = useWizardStore() as { formData: FormData }
+  const { addRun } = useTransitionMetrics()
+
+  useEffect(() => {
+    // Only process the timer if we're in the browser
+    if (typeof window !== 'undefined') {
+      const startTimeStr = sessionStorage.getItem('transitionStartTime')
+      if (startTimeStr) {
+        const startTime = parseFloat(startTimeStr)
+        const endTime = performance.now()
+        const duration = endTime - startTime
+
+        // Add the run duration to metrics
+        addRun(duration)
+        
+        // Clear the start time
+        sessionStorage.removeItem('transitionStartTime')
+      }
+    }
+  }, [addRun])
 
   return (
     <StepPage

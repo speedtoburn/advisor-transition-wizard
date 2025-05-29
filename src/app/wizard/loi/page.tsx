@@ -1,8 +1,8 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import StepPage from '@/components/wizard/StepPage'
 import { useWizardStore } from '@/store/wizardStore'
-import { useState } from 'react'
 
 export default function LOIPage() {
   const { updateFormData } = useWizardStore()
@@ -12,6 +12,14 @@ export default function LOIPage() {
     aum: '',
     targetDate: ''
   })
+
+  useEffect(() => {
+    // Only start timing if there isn't already a timer running
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('transitionStartTime')) {
+      const startTime = performance.now()
+      sessionStorage.setItem('transitionStartTime', startTime.toString())
+    }
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
