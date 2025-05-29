@@ -6,10 +6,14 @@ interface WizardState {
   currentStep: WizardStep
   stepIndex: number
   formData: Record<string, unknown>
+  statusByStep: Record<WizardStep, string>
+  transferId?: string
   setStep: (step: WizardStep) => void
   nextStep: () => void
   previousStep: () => void
   updateFormData: (data: Record<string, unknown>) => void
+  updateStatus: (step: WizardStep, status: string) => void
+  setTransferId: (id: string) => void
 }
 
 const STEP_ORDER: WizardStep[] = ['loi', 'templates', 'epackage', 'esign', 'custodian', 'compliance', 'complete']
@@ -18,6 +22,16 @@ export const useWizardStore = create<WizardState>((set) => ({
   currentStep: 'loi',
   stepIndex: 0,
   formData: {},
+  statusByStep: {
+    loi: '',
+    templates: '',
+    epackage: '',
+    esign: '',
+    custodian: '',
+    compliance: '',
+    complete: ''
+  },
+  transferId: undefined,
   
   setStep: (step) => set({ 
     currentStep: step,
@@ -42,5 +56,11 @@ export const useWizardStore = create<WizardState>((set) => ({
   
   updateFormData: (data) => set((state) => ({
     formData: { ...state.formData, ...data }
-  }))
+  })),
+
+  updateStatus: (step, status) => set((state) => ({
+    statusByStep: { ...state.statusByStep, [step]: status }
+  })),
+
+  setTransferId: (id) => set({ transferId: id })
 }))
