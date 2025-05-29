@@ -1,6 +1,16 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import StepPage from '../StepPage'
 import { useWizardStore } from '@/store/wizardStore'
+
+interface WizardState {
+  currentStep: string
+  stepIndex: number
+  formData: Record<string, unknown>
+  setStep: (step: string) => void
+  nextStep: () => void
+  previousStep: () => void
+  updateFormData: (data: Record<string, unknown>) => void
+}
 
 // Mock the wizardStore
 jest.mock('@/store/wizardStore', () => ({
@@ -11,14 +21,17 @@ describe('StepPage', () => {
   const mockNextStep = jest.fn()
 
   beforeEach(() => {
-    // Setup mock for useWizardStore
-    ;(useWizardStore as jest.Mock).mockImplementation(() => ({
+    // Clear all mocks before each test
+    jest.clearAllMocks()
+    
+    // Setup mock for useWizardStore with type assertion
+    ;(useWizardStore as unknown as jest.Mock<Partial<WizardState>>).mockImplementation(() => ({
       nextStep: mockNextStep
     }))
   })
 
   it('renders the title and description', () => {
-    render(
+    const { getByText } = render(
       <StepPage
         title="Test Title"
         description="Test Description"
@@ -27,12 +40,15 @@ describe('StepPage', () => {
       </StepPage>
     )
 
-    expect(screen.getByText('Test Title')).toBeInTheDocument()
-    expect(screen.getByText('Test Description')).toBeInTheDocument()
+    const titleElement = getByText('Test Title')
+    const descriptionElement = getByText('Test Description')
+
+    expect(titleElement).toBeDefined()
+    expect(descriptionElement).toBeDefined()
   })
 
   it('calls nextStep when Continue button is clicked', () => {
-    render(
+    const { getByRole } = render(
       <StepPage
         title="Test Title"
         description="Test Description"
@@ -41,14 +57,14 @@ describe('StepPage', () => {
       </StepPage>
     )
 
-    const continueButton = screen.getByText('Continue')
-    fireEvent.click(continueButton)
+    const continueButton = getByRole('button', { name: /continue/i })
+    continueButton.click()
 
-    expect(mockNextStep).toHaveBeenCalled()
+    expect(mockNextStep).toHaveBeenCalledTimes(1)
   })
 
   it('renders children content', () => {
-    render(
+    const { getByText } = render(
       <StepPage
         title="Test Title"
         description="Test Description"
@@ -57,6 +73,7 @@ describe('StepPage', () => {
       </StepPage>
     )
 
-    expect(screen.getByText('Test Child Content')).toBeInTheDocument()
+    const childElement = getByText('Test Child Content')
+    expect(childElement).toBeDefined()
   })
 })
