@@ -5,6 +5,7 @@ import { useWizardStore } from '@/store/wizardStore'
 class MockEventSource {
   onmessage: ((event: MessageEvent) => void) | null = null
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(url: string) {
     // Simulate the 5-second delay and emit complete status
     setTimeout(() => {
@@ -17,7 +18,7 @@ class MockEventSource {
   }
 }
 
-global.EventSource = MockEventSource as any
+global.EventSource = MockEventSource as typeof EventSource
 
 describe('Transfer Stream API', () => {
   it('requires transferId parameter', async () => {
