@@ -1,60 +1,82 @@
 'use client'
 
-import { useWizardStore } from '@/store/wizardStore'
+import { useEffect } from 'react'
+import { useTransitionTimer } from '@/hooks/useTransitionTimer'
 import StepPage from '@/components/wizard/StepPage'
 import Confetti from '@/components/wizard/Confetti'
 
-interface FormData {
-  advisorName?: string
-  firmName?: string
-}
-
 export default function CompletePage() {
-  const { formData } = useWizardStore() as { formData: FormData }
+  const { stopTimer, getStats } = useTransitionTimer()
+
+  useEffect(() => {
+    const duration = stopTimer()
+    if (duration) {
+      console.log(`Wizard completed in ${duration / 1000} seconds`)
+    }
+  }, [stopTimer])
+
+  const stats = getStats()
 
   return (
-    <StepPage
-      title="Transition Complete!"
-      description="Your advisor transition package has been successfully prepared."
-    >
-      <>
-        <Confetti />
-        <div className="mt-8 space-y-6">
-          <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="rounded-lg bg-white px-6 py-8 shadow">
-              <dt className="text-sm font-semibold leading-6 text-zinc-600">
-                Advisor Name
-              </dt>
-              <dd className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                {formData?.advisorName || 'N/A'}
-              </dd>
+    <>
+      <Confetti />
+      <StepPage
+        title="Transition Complete!"
+        description="Your advisor transition package has been successfully prepared."
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-4 bg-zinc-50 rounded-lg">
+              <h3 className="text-sm font-medium text-zinc-500">Advisor Name</h3>
+              <p className="mt-1 text-lg font-semibold text-zinc-900">N/A</p>
             </div>
-            <div className="rounded-lg bg-white px-6 py-8 shadow">
-              <dt className="text-sm font-semibold leading-6 text-zinc-600">
-                Firm Name
-              </dt>
-              <dd className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                {formData?.firmName || 'N/A'}
-              </dd>
+            <div className="p-4 bg-zinc-50 rounded-lg">
+              <h3 className="text-sm font-medium text-zinc-500">Firm Name</h3>
+              <p className="mt-1 text-lg font-semibold text-zinc-900">N/A</p>
             </div>
-          </dl>
+          </div>
 
-          <div className="mt-8 flex items-center justify-center gap-x-6">
-            <a
-              href="/dashboard"
-              className="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Go to Dashboard
-            </a>
+          <div className="flex gap-4">
             <button
-              onClick={() => window.print()}
-              className="text-sm font-semibold leading-6 text-zinc-900"
+              type="button"
+              className="flex-1 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              onClick={() => window.location.href = '/metrics'}
             >
-              Download Summary <span aria-hidden="true">→</span>
+              View Metrics
+            </button>
+            <button
+              type="button"
+              className="flex-1 rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
+            >
+              Download Summary →
             </button>
           </div>
+
+          {stats.runCount > 0 && (
+            <div className="mt-6 p-4 bg-zinc-50 rounded-lg">
+              <h3 className="text-sm font-medium text-zinc-500 mb-2">Completion Stats</h3>
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="text-zinc-500">Total Runs</dt>
+                  <dd className="font-medium text-zinc-900">{stats.runCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Average Time</dt>
+                  <dd className="font-medium text-zinc-900">{stats.averageTime}s</dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Fastest Run</dt>
+                  <dd className="font-medium text-zinc-900">{stats.fastestRun}s</dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Slowest Run</dt>
+                  <dd className="font-medium text-zinc-900">{stats.slowestRun}s</dd>
+                </div>
+              </dl>
+            </div>
+          )}
         </div>
-      </>
-    </StepPage>
+      </StepPage>
+    </>
   )
 }

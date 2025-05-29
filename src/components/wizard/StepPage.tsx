@@ -2,13 +2,21 @@
 
 import { useWizardStore } from '@/store/wizardStore'
 
+export interface Field {
+  label: string
+  name: string
+  type: string
+  required?: boolean
+}
+
 interface StepPageProps {
   title: string
   description: string
-  children: React.ReactNode
+  fields?: Field[]
+  children?: React.ReactNode
 }
 
-export default function StepPage({ title, description, children }: StepPageProps) {
+export default function StepPage({ title, description, fields, children }: StepPageProps) {
   const { nextStep } = useWizardStore()
 
   return (
@@ -19,7 +27,26 @@ export default function StepPage({ title, description, children }: StepPageProps
       </div>
 
       <div className="bg-white shadow-sm ring-1 ring-zinc-900/5 rounded-lg p-6">
-        {children}
+        {fields ? (
+          <form className="space-y-6">
+            {fields.map((field) => (
+              <div key={field.name}>
+                <label htmlFor={field.name} className="block text-sm font-medium text-zinc-700">
+                  {field.label}
+                </label>
+                <div className="mt-1">
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    id={field.name}
+                    required={field.required}
+                    className="block w-full rounded-md border-zinc-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </form>
+        ) : children}
       </div>
 
       <div className="mt-8 flex justify-end gap-4">
