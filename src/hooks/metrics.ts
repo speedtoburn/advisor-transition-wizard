@@ -9,6 +9,11 @@ interface TransitionStats {
   slowestRun: number
 }
 
+const STORAGE_KEYS = {
+  RUNS: 'advisor_transition_runs',
+  START_TIME: 'advisor_transition_start_time'
+}
+
 const defaultStats: TransitionStats = {
   runCount: 0,
   averageTime: 0,
@@ -17,34 +22,91 @@ const defaultStats: TransitionStats = {
 }
 
 export function useTransitionMetrics() {
-  const getLocalStorage = () => {
-    try {
-      return window.localStorage
-    } catch {
-      return null
+  const safeStorage = {
+    get: (key: string): string | null => {
+      if (typeof window === 'undefined') return null
+      try {
+        return window.localStorage.getItem(key)
+      } catch (error) {
+        console.error(`Failed to get ${key} from storage:`, error)
+        return null
+      }
+    },
+    set: (key: string, value: string): void => {
+      if (typeof window === 'undefined') return
+      try {
+        window.localStorage.setItem(key, value)
+        // Verify the value was set correctly
+        const stored = window.localStorage.getItem(key)
+        if (stored !== value) {
+          console.error(`Storage verification failed for ${key}`)
+        }
+      } catch (error) {
+        console.error(`Failed to save ${key} to storage:`, error)
+      }
+    },
+    remove: (key: string): void => {
+      if (typeof window === 'undefined') return
+      try {
+        window.localStorage.removeItem(key)
+      } catch (error) {
+        console.error(`Failed to remove ${key} from storage:`, error)
+      }
     }
   }
 
-  const addRun = useCallback((duration: number) => {
-    const storage = getLocalStorage()
-    if (!storage) return
+  const startTimer = useCallback(() => {
+    // Clear any existing timer first
+    safeStorage.remove(STORAGE_KEYS.START_TIME)
+    
+    const startTime = performance.now()
+    safeStorage.set(STORAGE_KEYS.START_TIME, startTime.toString())
+    console.log('Timer started:', {
+      time: startTime,
+      stored: safeStorage.get(STORAGE_KEYS.START_TIME)
+    })
+  }, [])
 
-    try {
-      const runs = JSON.parse(storage.getItem('runs') || '[]') as number[]
-      runs.push(duration)
-      storage.setItem('runs', JSON.stringify(runs))
-    } catch (error) {
-      console.error('Failed to save run duration:', error)
+  const stopTimer = useCallback(() => {
+    const startTimeStr = safeStorage.get(STORAGE_KEYS.START_TIME)
+    console.log('Retrieved start time:', startTimeStr)
+
+    if (!startTimeStr) {
+      console.log('No start time found')
+      return
     }
+
+    const startTime = parseFloat(startTimeStr)
+    const endTime = performance.now()
+    const duration = endTime - startTime
+
+    console.log('Timer completed:', {
+      startTime,
+      endTime,
+      duration,
+      durationInSeconds: duration / 1000
+    })
+
+    // Get existing runs
+    const runsStr = safeStorage.get(STORAGE_KEYS.RUNS)
+    const runs = runsStr ? JSON.parse(runsStr) as number[] : []
+    
+    // Add new run
+    runs.push(duration)
+    safeStorage.set(STORAGE_KEYS.RUNS, JSON.stringify(runs))
+    
+    // Clear start time
+    safeStorage.remove(STORAGE_KEYS.START_TIME)
+    
+    console.log('Run saved. Total runs:', runs.length)
   }, [])
 
   const getStats = useCallback((): TransitionStats => {
-    const storage = getLocalStorage()
-    if (!storage) return defaultStats
+    const runsStr = safeStorage.get(STORAGE_KEYS.RUNS)
+    if (!runsStr) return defaultStats
 
     try {
-      const runs = JSON.parse(storage.getItem('runs') || '[]') as number[]
-      
+      const runs = JSON.parse(runsStr) as number[]
       if (runs.length === 0) return defaultStats
 
       const runCount = runs.length
@@ -54,29 +116,24 @@ export function useTransitionMetrics() {
 
       return {
         runCount,
-        averageTime: Number((averageTime / 1000).toFixed(1)), // Convert to seconds with 1 decimal
+        averageTime: Number((averageTime / 1000).toFixed(1)),
         fastestRun: Number((fastestRun / 1000).toFixed(1)),
         slowestRun: Number((slowestRun / 1000).toFixed(1))
       }
     } catch (error) {
-      console.error('Failed to get transition stats:', error)
+      console.error('Failed to calculate stats:', error)
       return defaultStats
     }
   }, [])
 
   const clearStats = useCallback(() => {
-    const storage = getLocalStorage()
-    if (!storage) return
-
-    try {
-      storage.removeItem('runs')
-    } catch (error) {
-      console.error('Failed to clear stats:', error)
-    }
+    safeStorage.remove(STORAGE_KEYS.RUNS)
+    safeStorage.remove(STORAGE_KEYS.START_TIME)
   }, [])
 
   return {
-    addRun,
+    startTimer,
+    stopTimer,
     getStats,
     clearStats
   }

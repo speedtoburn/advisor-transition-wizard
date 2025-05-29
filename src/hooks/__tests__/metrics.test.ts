@@ -3,9 +3,11 @@ import { useTransitionMetrics } from '../metrics'
 
 describe('useTransitionMetrics', () => {
   let localStorageMock: { [key: string]: string }
+  let performanceNowMock: number
 
   beforeEach(() => {
     localStorageMock = {}
+    performanceNowMock = 0
     
     global.window = Object.create(window)
     Object.defineProperty(window, 'localStorage', {
@@ -20,35 +22,53 @@ describe('useTransitionMetrics', () => {
       },
       writable: true
     })
+
+    // Mock performance.now()
+    global.performance = {
+      ...global.performance,
+      now: () => {
+        performanceNowMock += 1000 // Increment by 1 second each call
+        return performanceNowMock
+      }
+    }
   })
 
-  it('should add a new run duration', () => {
+  it('should record a complete run', () => {
     const { result } = renderHook(() => useTransitionMetrics())
     
     act(() => {
-      result.current.addRun(5000) // 5 seconds in ms
+      result.current.startTimer() // First call to performance.now() = 1000
+      result.current.stopTimer()  // Second call to performance.now() = 2000
     })
     
-    const stored = JSON.parse(localStorageMock['runs'])
-    expect(stored).toEqual([5000])
+    const stored = JSON.parse(localStorageMock['transition_runs'])
+    expect(stored).toEqual([1000]) // 2000 - 1000 = 1000ms duration
   })
 
   it('should calculate stats correctly', () => {
     const { result } = renderHook(() => useTransitionMetrics())
     
-    // Add multiple runs: 5s, 7s, 3s
+    // Record multiple runs
     act(() => {
-      result.current.addRun(5000)
-      result.current.addRun(7000)
-      result.current.addRun(3000)
+      // First run: 1000ms
+      result.current.startTimer()
+      result.current.stopTimer()
+      
+      // Second run: 1000ms
+      result.current.startTimer()
+      result.current.stopTimer()
+      
+      // Third run: 1000ms
+      result.current.startTimer()
+      result.current.stopTimer()
     })
     
     const stats = result.current.getStats()
     expect(stats).toEqual({
       runCount: 3,
-      averageTime: 5.0, // (5 + 7 + 3) / 3 = 5.0 seconds
-      fastestRun: 3.0,
-      slowestRun: 7.0
+      averageTime: 1.0, // 1 second average
+      fastestRun: 1.0,
+      slowestRun: 1.0
     })
   })
 
@@ -68,7 +88,8 @@ describe('useTransitionMetrics', () => {
     const { result } = renderHook(() => useTransitionMetrics())
     
     act(() => {
-      result.current.addRun(5000)
+      result.current.startTimer()
+      result.current.stopTimer()
       result.current.clearStats()
     })
     
@@ -77,7 +98,7 @@ describe('useTransitionMetrics', () => {
   })
 
   it('should handle invalid localStorage data', () => {
-    localStorageMock['runs'] = 'invalid json'
+    localStorageMock['transition_runs'] = 'invalid json'
     
     const { result } = renderHook(() => useTransitionMetrics())
     const stats = result.current.getStats()
