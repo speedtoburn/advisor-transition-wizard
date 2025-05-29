@@ -40,7 +40,7 @@ export default function CompletePage() {
                 Advisor Name
               </dt>
               <dd className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                {formData.advisorName || 'N/A'}
+                {(formData.advisorName as string) || 'N/A'}
               </dd>
             </div>
             <div className="rounded-lg bg-white px-6 py-8 shadow-sm ring-1 ring-zinc-900/5">
@@ -48,7 +48,7 @@ export default function CompletePage() {
                 Firm Name
               </dt>
               <dd className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                {formData.firmName || 'N/A'}
+                {(formData.firmName as string) || 'N/A'}
               </dd>
             </div>
           </dl>

@@ -5,11 +5,11 @@ export type WizardStep = 'loi' | 'templates' | 'epackage' | 'esign' | 'custodian
 interface WizardState {
   currentStep: WizardStep
   stepIndex: number
-  formData: Record<string, any>
+  formData: Record<string, unknown>
   setStep: (step: WizardStep) => void
   nextStep: () => void
   previousStep: () => void
-  updateFormData: (data: Record<string, any>) => void
+  updateFormData: (data: Record<string, unknown>) => void
 }
 
 const STEP_ORDER: WizardStep[] = ['loi', 'templates', 'epackage', 'esign', 'custodian', 'compliance', 'complete']
